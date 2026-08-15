@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  user
+  admin
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  username       String
+  passwordHash   String?
+  role           Role      @default(user)
+  googleSub      String?   @unique
+  picture        String?
+  createdAt      DateTime  @default(now())
+
+  fields         String    @default("[]") // JSON string[] — job-search focus areas
+  experience     String? // experience bracket key
+  title          String?
+  location       String?
+  linkedinSynced Boolean   @default(true)
+  mailSynced     Boolean   @default(true)
+
+  goalApps       Int       @default(5)
+  goalMocks      Int       @default(2)
+  goalDate       String?
+
+  trialStartedAt DateTime  @default(now())
+  subscribed     Boolean   @default(false)
+  billingPlan    String? // "card" | "paypal" | "applepay" | "googlepay"
+
+  sessions       Session[]
+  resetTokens    PasswordResetToken[]
+  applications   Application[]
+  profileLinks   ProfileLink[]
+  stages         PipelineStage[]
+  cvLibraryItems CvLibraryItem[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Application {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  company         String
+  role            String
+  source          String   @default("Direct")
+  cvVersion       String?
+  cvFileName      String?
+  link            String?
+  appliedDate     String
+  stage           String   @default("applied")
+  nextStep        String   @default("Awaiting response")
+  desc            String?
+  referral        Boolean  @default(false)
+  rejected        Boolean  @default(false)
+  rejectedAt      String?
+
+  assignmentTitle String?
+  assignmentDesc  String?
+  assignmentDue   String?
+
+  jdKeywords      String   @default("[]") // JSON string[]
+  notes           String   @default("[]") // JSON {date, text}[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ProfileLink {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label  String
+  url    String
+
+  @@index([userId])
+}
+
+model PipelineStage {
+  id       String  @id @default(cuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key      String
+  label    String
+  desc     String?
+  color    String
+  soft     String
+  position Int
+  custom   Boolean @default(false)
+
+  @@index([userId])
+  @@unique([userId, key])
+}
+
+model CvLibraryItem {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name   String
+  date   String
+  tag    String
+
+  @@index([userId])
+}

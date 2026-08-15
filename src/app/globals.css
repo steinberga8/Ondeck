@@ -1,0 +1,133 @@
+:root {
+  --bg: oklch(0.22 0.006 260);
+  --surface: oklch(0.27 0.007 260);
+  --surface2: oklch(0.32 0.008 260);
+  --surface3: oklch(0.37 0.009 260);
+  --border: oklch(1 0 0 / 0.1);
+  --border-soft: oklch(1 0 0 / 0.07);
+  --text: oklch(0.95 0.005 260);
+  --text-dim: oklch(0.74 0.008 260);
+  --text-faint: oklch(0.58 0.008 260);
+  --accent: oklch(0.72 0.14 195);
+  --accent-soft: oklch(0.72 0.14 195 / 0.18);
+  --on-accent: oklch(0.99 0.004 65);
+  --green: oklch(0.72 0.13 148);
+  --green-soft: oklch(0.72 0.13 148 / 0.17);
+  --amber: oklch(0.78 0.13 82);
+  --amber-soft: oklch(0.78 0.13 82 / 0.17);
+  --red: oklch(0.62 0.19 25);
+  --red-soft: oklch(0.62 0.19 25 / 0.15);
+
+  --sb-bg: oklch(0.27 0.007 260);
+  --sb-surface: oklch(0.32 0.008 260);
+  --sb-surface3: oklch(0.37 0.009 260);
+  --sb-border: oklch(1 0 0 / 0.1);
+  --sb-border-soft: oklch(1 0 0 / 0.07);
+  --sb-text: oklch(0.95 0.005 260);
+  --sb-text-dim: oklch(0.74 0.008 260);
+  --sb-text-faint: oklch(0.58 0.008 260);
+  --sb-accent: oklch(0.72 0.14 195);
+  --sb-accent-soft: oklch(0.72 0.14 195 / 0.18);
+
+  --st-applied: oklch(0.62 0.006 260);
+  --st-applied-soft: oklch(0.62 0.006 260 / 0.15);
+  --st-screening: oklch(0.7 0.1 220);
+  --st-screening-soft: oklch(0.7 0.1 220 / 0.15);
+  --st-int1: oklch(0.66 0.15 292);
+  --st-int1-soft: oklch(0.66 0.15 292 / 0.15);
+  --st-assign: oklch(0.78 0.13 82);
+  --st-assign-soft: oklch(0.78 0.13 82 / 0.15);
+  --st-hr: oklch(0.68 0.13 322);
+  --st-hr-soft: oklch(0.68 0.13 322 / 0.15);
+  --st-contract: oklch(0.72 0.14 150);
+  --st-contract-soft: oklch(0.72 0.14 150 / 0.15);
+
+  --font-ui: var(--font-sora), system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), Georgia, serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+}
+
+:root[data-theme="light"],
+:root[data-theme="mixed"] {
+  --bg: oklch(0.97 0.004 260);
+  --surface: oklch(0.995 0.002 260);
+  --surface2: oklch(0.94 0.005 260);
+  --surface3: oklch(0.89 0.006 260);
+  --border: oklch(0 0 0 / 0.12);
+  --border-soft: oklch(0 0 0 / 0.07);
+  --text: oklch(0.22 0.008 260);
+  --text-dim: oklch(0.42 0.008 260);
+  --text-faint: oklch(0.55 0.007 260);
+  --accent: oklch(0.5 0.13 195);
+  --accent-soft: oklch(0.5 0.13 195 / 0.12);
+  --on-accent: oklch(0.99 0.004 65);
+  --green: oklch(0.55 0.13 148);
+  --green-soft: oklch(0.6 0.13 148 / 0.14);
+  --amber: oklch(0.58 0.12 82);
+  --amber-soft: oklch(0.75 0.13 82 / 0.16);
+
+  --st-applied: oklch(0.48 0.006 260);
+  --st-applied-soft: oklch(0.48 0.006 260 / 0.12);
+  --st-screening: oklch(0.52 0.1 220);
+  --st-screening-soft: oklch(0.52 0.1 220 / 0.12);
+  --st-int1: oklch(0.52 0.15 292);
+  --st-int1-soft: oklch(0.52 0.15 292 / 0.12);
+  --st-assign: oklch(0.58 0.12 82);
+  --st-assign-soft: oklch(0.58 0.12 82 / 0.14);
+  --st-hr: oklch(0.52 0.13 322);
+  --st-hr-soft: oklch(0.52 0.13 322 / 0.12);
+  --st-contract: oklch(0.5 0.14 150);
+  --st-contract-soft: oklch(0.5 0.14 150 / 0.12);
+}
+
+/* "Mixed" keeps a dark sidebar with a light content area — only the light
+   theme overrides the --sb-* sidebar tokens too. */
+:root[data-theme="light"] {
+  --sb-bg: oklch(0.995 0.002 260);
+  --sb-surface: oklch(0.94 0.005 260);
+  --sb-surface3: oklch(0.89 0.006 260);
+  --sb-border: oklch(0 0 0 / 0.12);
+  --sb-border-soft: oklch(0 0 0 / 0.07);
+  --sb-text: oklch(0.22 0.008 260);
+  --sb-text-dim: oklch(0.42 0.008 260);
+  --sb-text-faint: oklch(0.55 0.007 260);
+  --sb-accent: oklch(0.5 0.13 195);
+  --sb-accent-soft: oklch(0.5 0.13 195 / 0.12);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: inherit; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+@keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes modalIn { from { opacity: 0; transform: scale(0.97) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.om-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  z-index: 1;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
