@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkRateLimit, generateToken, hashToken } from "@/lib/auth";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -29,9 +30,13 @@ export async function POST(request: NextRequest) {
       });
 
       const resetUrl = `${request.nextUrl.origin}/reset-password?token=${token}`;
-      // No email provider is wired up yet — log the link so it's usable in dev/demo.
-      // Wire a real provider (Resend/Postmark/SES) here before shipping this to real users.
-      console.log(`[password reset] ${email} -> ${resetUrl}`);
+      try {
+        await sendPasswordResetEmail(email, resetUrl);
+      } catch (err) {
+        // Don't fail the request or leak delivery failures to the client —
+        // this is still the generic "if an account exists..." response either way.
+        console.error("Failed to send password reset email:", err);
+      }
     }
   }
 

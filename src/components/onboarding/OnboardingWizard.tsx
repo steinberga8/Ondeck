@@ -373,7 +373,7 @@ export function OnboardingWizard() {
                       <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-faint)" }}>OR</span>
                       <div style={{ flex: 1, height: 1, background: "var(--border)" }} />
                     </div>
-                    <GoogleButton keepLoggedIn={keepLogged} label="Continue with Google" onSuccess={afterGoogleSuccess} onError={setAuthError} />
+                    <GoogleButton keepLoggedIn={keepLogged} onSuccess={afterGoogleSuccess} onError={setAuthError} />
                   </div>
                 </>
               )}
