@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
@@ -18,7 +19,9 @@ export default async function Home() {
         overflow: "hidden",
       }}
     >
-      <OnboardingWizard />
+      <Suspense fallback={null}>
+        <OnboardingWizard />
+      </Suspense>
     </div>
   );
 }

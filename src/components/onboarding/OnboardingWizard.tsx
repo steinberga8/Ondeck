@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { LogoMark, CheckIcon, AlertIcon, LinkedInGlyph } from "@/components/icons";
@@ -20,6 +20,11 @@ const OB_STEPS = [
 ];
 
 type AuthMode = "signup" | "signin";
+
+// Set once by the site owner (Vercel env var) — mirrors the Google Client ID
+// pattern: nobody is ever asked to paste anything, the button just doesn't
+// render until this is configured.
+const LINKEDIN_ENABLED = !!process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID;
 
 async function postJson(url: string, body: unknown) {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -48,6 +53,25 @@ export function OnboardingWizard() {
 
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (!error) return;
+    const messages: Record<string, string> = {
+      linkedin_denied: "LinkedIn sign-in was cancelled.",
+      linkedin_invalid_state: "LinkedIn sign-in expired — please try again.",
+      linkedin_failed: "LinkedIn sign-in failed — please try again.",
+      linkedin_not_configured: "LinkedIn sign-in isn't set up yet.",
+    };
+    // Syncing an error message in from the URL (an external source) after an
+    // OAuth redirect — not derivable during render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAuthMode("signin");
+    setAuthError(messages[error] ?? "Sign-in failed — please try again.");
+    router.replace("/");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const [fields, setFields] = useState<string[]>([]);
   const [exp, setExp] = useState<string | null>(null);
@@ -420,25 +444,28 @@ export function OnboardingWizard() {
                     <div style={{ flex: 1 }}>
                       <GoogleButton keepLoggedIn={keepLogged} onSuccess={afterGoogleSuccess} onError={setAuthError} />
                     </div>
-                    <div
-                      onClick={() => setAuthError("LinkedIn sign-in isn't wired up yet — see the separate LinkedIn OAuth handoff.")}
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 9,
-                        padding: 11,
-                        background: "oklch(1 0 0 / 0.15)",
-                        backdropFilter: "blur(8px)",
-                        border: "1px solid oklch(1 0 0 / 0.2)",
-                        borderRadius: 9,
-                        cursor: "pointer",
-                      }}
-                    >
-                      <LinkedInGlyph />
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>LinkedIn</span>
-                    </div>
+                    {LINKEDIN_ENABLED && (
+                      <a
+                        href={`/api/auth/linkedin/start?keep=${keepLogged ? "1" : "0"}`}
+                        style={{
+                          flex: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 9,
+                          padding: 11,
+                          background: "oklch(1 0 0 / 0.15)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid oklch(1 0 0 / 0.2)",
+                          borderRadius: 9,
+                          cursor: "pointer",
+                          textDecoration: "none",
+                        }}
+                      >
+                        <LinkedInGlyph />
+                        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--text)" }}>LinkedIn</span>
+                      </a>
+                    )}
                   </div>
                 </>
               )}
