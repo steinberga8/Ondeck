@@ -39,7 +39,7 @@ try {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sora.variable} ${instrumentSerif.variable} ${ibmPlexMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${sora.variable} ${instrumentSerif.variable} ${ibmPlexMono.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

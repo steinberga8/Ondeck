@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { AppShell } from "@/components/app/AppShell";
+import { PreviewProvider } from "@/components/files/FilePreview";
 import type { SafeUser } from "@/lib/serialize";
 
 export function AppShellClient({ user, children }: { user: SafeUser; children: React.ReactNode }) {
@@ -15,5 +16,9 @@ export function AppShellClient({ user, children }: { user: SafeUser; children: R
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 
-  return <AppShell user={liveUser ?? user}>{children}</AppShell>;
+  return (
+    <PreviewProvider>
+      <AppShell user={liveUser ?? user}>{children}</AppShell>
+    </PreviewProvider>
+  );
 }

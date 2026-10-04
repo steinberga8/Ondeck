@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { CloseIcon, ClockIcon, RejectIcon } from "@/components/icons";
 import type { DecoratedApp } from "@/lib/app-logic";
 import type { PipelineStage } from "@/lib/app-types";
+import { CvChip } from "@/components/files/FileParts";
 
 export function KanbanCard({
   app,
@@ -12,6 +13,7 @@ export function KanbanCard({
   onReject,
   onRejectedAtChange,
   onDelete,
+  onAttachCv,
 }: {
   app: DecoratedApp;
   stages: PipelineStage[];
@@ -19,11 +21,13 @@ export function KanbanCard({
   onReject: () => void;
   onRejectedAtChange: (key: string) => void;
   onDelete: () => void;
+  onAttachCv: () => void;
 }) {
   const router = useRouter();
 
   return (
     <div
+      className="kanban-card"
       draggable
       onDragStart={(e) => e.dataTransfer.setData("text/plain", app.id)}
       onClick={() => router.push(`/app/applications/${app.id}`)}
@@ -38,6 +42,8 @@ export function KanbanCard({
         opacity: app.cardOpacity,
         transition: "transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease",
         boxShadow: "0 1px 2px oklch(0 0 0 / 0.12)",
+        backdropFilter: "blur(12px) saturate(135%)",
+        WebkitBackdropFilter: "blur(12px) saturate(135%)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -58,6 +64,8 @@ export function KanbanCard({
           <CloseIcon size={9} color="var(--text-dim)" />
         </div>
       </div>
+
+      <CvChip app={app} onAttach={onAttachCv} />
 
       {app.rejected && (
         <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>

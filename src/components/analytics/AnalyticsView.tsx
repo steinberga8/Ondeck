@@ -1,7 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { computeAtsBuckets, computeCvStats, computeFunnel, computeRefStats, computeRejStats, computeStatCards, computeTimeStats } from "@/lib/app-logic";
+import { DownloadIcon, EyeIcon } from "@/components/icons";
+import { cvPreviewTarget, hasCv } from "@/components/files/FileParts";
+import { usePreview } from "@/components/files/FilePreview";
+import { fileUrl } from "@/lib/uploads";
+import { computeAtsBuckets, computeCvStats, decorateApp, computeFunnel, computeRefStats, computeRejStats, computeStatCards, computeTimeStats } from "@/lib/app-logic";
 import { useAppData, type InitialAppData } from "@/lib/useAppData";
 
 function Card({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
@@ -19,7 +24,9 @@ function EmptyNote({ children }: { children: React.ReactNode }) {
 }
 
 export function AnalyticsView({ initial }: { initial: InitialAppData }) {
-  const { apps, stages, loading, error } = useAppData(initial);
+  const { apps, stages, loading, error, pickAndAttachCv } = useAppData(initial);
+  const router = useRouter();
+  const openPreview = usePreview();
 
   const hasApps = (apps?.length ?? 0) > 0;
   const funnel = useMemo(() => (apps && stages ? computeFunnel(apps, stages) : []), [apps, stages]);
@@ -29,6 +36,10 @@ export function AnalyticsView({ initial }: { initial: InitialAppData }) {
   const timeStats = useMemo(() => (apps && stages ? computeTimeStats(apps, stages) : []), [apps, stages]);
   const rejStats = useMemo(() => (apps && stages ? computeRejStats(apps, stages) : []), [apps, stages]);
   const statCards = useMemo(() => computeStatCards(apps ?? []), [apps]);
+  const appRows = useMemo(() => {
+    const stageMap = new Map((stages ?? []).map((s) => [s.key, s]));
+    return (apps ?? []).map((a) => decorateApp(a, stageMap));
+  }, [apps, stages]);
 
   if (loading || !apps || !stages) {
     return <div style={{ padding: 40, color: "var(--text-dim)", fontSize: 13 }}>Loading analytics…</div>;
@@ -57,6 +68,52 @@ export function AnalyticsView({ initial }: { initial: InitialAppData }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }}>
+        <div style={{ gridColumn: "1 / -1" }}>
+          <Card title="Applications & CVs" sub="The exact CV you sent to each company — preview or download in one click">
+            {!hasApps ? (
+              <div style={{ padding: "24px 0", textAlign: "center", fontSize: 12, color: "var(--text-faint)" }}>No applications yet.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", maxHeight: 360, overflowY: "auto" }}>
+                {appRows.map((app) => (
+                  <div
+                    key={app.id}
+                    onClick={() => router.push(`/app/applications/${app.id}`)}
+                    className="row-hover"
+                    style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 1.5fr) auto", gap: 14, alignItems: "center", padding: "9px 6px", borderBottom: "1px solid var(--border-soft)", borderRadius: 6, cursor: "pointer" }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{app.company}</div>
+                      <div style={{ fontSize: 11, color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{app.role}</div>
+                    </div>
+                    <div>
+                      <span style={{ display: "inline-block", fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: app.stageBg, color: app.stageColor, whiteSpace: "nowrap" }}>{app.stageLabel}</span>
+                    </div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--text-dim)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{hasCv(app) ? (app.cvFile?.name ?? app.cvFileName) : "No CV attached"}</div>
+                    <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 2, justifyContent: "flex-end", minWidth: 76 }}>
+                      {hasCv(app) ? (
+                        <>
+                          <button type="button" className="icon-btn" title="Preview CV" onClick={() => openPreview(cvPreviewTarget(app, () => pickAndAttachCv(app.id)))}>
+                            <EyeIcon />
+                          </button>
+                          {app.cvFile && (
+                            <a className="icon-btn" title="Download CV" href={fileUrl(app.cvFile.id, true)} download={app.cvFile.name}>
+                              <DownloadIcon />
+                            </a>
+                          )}
+                        </>
+                      ) : (
+                        <div onClick={() => pickAndAttachCv(app.id)} style={{ fontSize: 10.5, fontWeight: 700, color: "var(--accent)", cursor: "pointer", padding: "4px 6px" }}>
+                          Attach CV
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
         <Card title="Pipeline Conversion Funnel" sub="Share of total applications reaching each stage">
           {!hasApps ? (
             <EmptyNote>No data yet — your funnel builds as applications move through stages.</EmptyNote>

@@ -163,3 +163,36 @@ export function BriefcaseIcon({ size = 15, color = "var(--amber)" }: { size?: nu
     </svg>
   );
 }
+
+export function EyeIcon({ size = 12, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" stroke={color} strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+export function DownloadIcon({ size = 12, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M12 4v11M7 10l5 5 5-5M5 20h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function UploadArrowIcon({ size = 14, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ flex: "none" }}>
+      <path d="M12 16V4M7 9l5-5 5 5M5 20h14" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function PaperclipIcon({ size = 13, color = "currentColor" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ flex: "none" }}>
+      <path d="M20 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

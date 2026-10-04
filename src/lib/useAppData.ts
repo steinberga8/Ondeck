@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Application, Note, PipelineStage } from "./app-types";
+import type { Application, AssignmentSlot, Note, PipelineStage } from "./app-types";
+import { apiError, CV_ACCEPT, pickFiles, uploadFile } from "./uploads";
 
 export type NewApplicationInput = {
   company: string;
@@ -11,6 +12,7 @@ export type NewApplicationInput = {
   desc?: string;
   referral?: boolean;
   cvName?: string;
+  cvFileId?: string;
 };
 
 export type ApplicationPatch = Partial<{
@@ -19,6 +21,7 @@ export type ApplicationPatch = Partial<{
   source: string;
   cvVersion: string | null;
   cvFileName: string | null;
+  cvFileId: string | null;
   link: string | null;
   appliedDate: string;
   stage: string;
@@ -32,7 +35,8 @@ export type ApplicationPatch = Partial<{
   assignmentDue: string | null;
   jdKeywords: string[];
   notes: Note[];
-  appendNote: { date?: string; text: string };
+  appendNote: { date?: string; text: string; stage?: string };
+  removeNoteIndex: number;
 }>;
 
 export type InitialAppData = { apps: Application[]; stages: PipelineStage[] };
@@ -107,6 +111,82 @@ export function useAppData(initial?: InitialAppData) {
     if (!res.ok) throw new Error("Failed to delete application.");
   }, []);
 
+  /** Swap in the refreshed application the file/email endpoints respond with. */
+  const applyServerApp = useCallback((app: Application) => {
+    setApps((prev) => (prev ? prev.map((a) => (a.id === app.id ? app : a)) : prev));
+    return app;
+  }, []);
+
+  const sendForApp = useCallback(
+    async (url: string, init: RequestInit, fallback: string) => {
+      const res = await fetch(url, init);
+      if (!res.ok) throw new Error(await apiError(res, fallback));
+      return applyServerApp((await res.json()).application as Application);
+    },
+    [applyServerApp],
+  );
+
+  /** Upload a CV file and attach it to an application (replacing any current one). */
+  const attachCv = useCallback(
+    async (appId: string, file: File) => {
+      const meta = await uploadFile(file);
+      return patchApp(appId, { cvFileId: meta.id });
+    },
+    [patchApp],
+  );
+
+  /** Open the file picker, then attach the chosen CV. Surfaces upload errors to the user. */
+  const pickAndAttachCv = useCallback(
+    async (appId: string) => {
+      const [file] = await pickFiles(CV_ACCEPT);
+      if (!file) return;
+      try {
+        await attachCv(appId, file);
+      } catch (e) {
+        alert(e instanceof Error ? e.message : "Couldn't attach that CV.");
+      }
+    },
+    [attachCv],
+  );
+
+  /** Attach an email file (.eml/.msg/.pdf/image) to one stage of an application. */
+  const attachEmailFile = useCallback(
+    (appId: string, stage: string, file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("stage", stage);
+      return sendForApp(`/api/applications/${appId}/emails`, { method: "POST", body: form }, "Couldn't attach that email.");
+    },
+    [sendForApp],
+  );
+
+  /** Save pasted email text under one stage. */
+  const attachEmailText = useCallback(
+    (appId: string, stage: string, text: string) =>
+      sendForApp(`/api/applications/${appId}/emails`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stage, text }) }, "Couldn't save that email."),
+    [sendForApp],
+  );
+
+  const removeEmail = useCallback(
+    (appId: string, emailId: string) => sendForApp(`/api/applications/${appId}/emails/${emailId}`, { method: "DELETE" }, "Couldn't remove that email."),
+    [sendForApp],
+  );
+
+  const addAssignmentFile = useCallback(
+    (appId: string, slot: AssignmentSlot, file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("slot", slot);
+      return sendForApp(`/api/applications/${appId}/assignment-files`, { method: "POST", body: form }, "Couldn't upload that file.");
+    },
+    [sendForApp],
+  );
+
+  const removeAssignmentFile = useCallback(
+    (appId: string, rowId: string) => sendForApp(`/api/applications/${appId}/assignment-files/${rowId}`, { method: "DELETE" }, "Couldn't remove that file."),
+    [sendForApp],
+  );
+
   const createStage = useCallback(async (input: { label: string; desc?: string; afterKey: string }) => {
     const res = await fetch("/api/stages", {
       method: "POST",
@@ -119,5 +199,5 @@ export function useAppData(initial?: InitialAppData) {
     return data.stages as PipelineStage[];
   }, []);
 
-  return { apps, stages, loading, error, refresh, createApp, patchApp, deleteApp, createStage };
+  return { apps, stages, loading, error, refresh, createApp, patchApp, deleteApp, createStage, attachCv, pickAndAttachCv, attachEmailFile, attachEmailText, removeEmail, addAssignmentFile, removeAssignmentFile };
 }

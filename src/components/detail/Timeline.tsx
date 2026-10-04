@@ -3,7 +3,7 @@
 import { CheckIcon } from "@/components/icons";
 import type { PipelineStage } from "@/lib/app-types";
 
-export function Timeline({ stage, stages }: { stage: string; stages: PipelineStage[] }) {
+export function Timeline({ stage, stages, onSelect }: { stage: string; stages: PipelineStage[]; onSelect?: (key: string) => void }) {
   const curIdx = stages.findIndex((s) => s.key === stage);
 
   return (
@@ -16,7 +16,12 @@ export function Timeline({ stage, stages }: { stage: string; stages: PipelineSta
         const lineLeft = i === 0 ? "transparent" : i - 1 < curIdx ? "var(--green)" : "var(--border)";
         const lineRight = i === stages.length - 1 ? "transparent" : i < curIdx ? "var(--green)" : "var(--border)";
         return (
-          <div key={st.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+          <div
+            key={st.key}
+            onClick={() => onSelect?.(st.key)}
+            title={onSelect ? "Show notes for this stage" : undefined}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", cursor: onSelect ? "pointer" : undefined }}
+          >
             <div style={{ width: "100%", display: "flex", alignItems: "center" }}>
               <div style={{ flex: 1, height: 2, background: lineLeft }} />
               <div style={{ width: 22, height: 22, borderRadius: "50%", flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: dotColor, border: `2px solid ${isCurrent ? st.color : "transparent"}` }}>

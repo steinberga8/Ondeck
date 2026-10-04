@@ -51,10 +51,20 @@ All colors/fonts are CSS custom properties defined once in `src/app/globals.css`
 ## Known gaps (intentional, not bugs — read before "fixing")
 
 - **No real email delivery.** Password-reset links are generated and stored for real (`PasswordResetToken`), but only ever logged to the server console (`src/app/api/auth/forgot-password/route.ts`) — no email provider is wired up.
-- **No real file storage.** CV "uploads" everywhere (onboarding, CV Builder, CV Library) only ever track a filename/tag string — never actual file bytes. Don't add a storage backend unless asked; this mirrors the original prototype's fidelity.
+- **File storage is Postgres-only and size-capped.** Application CVs, per-stage emails and home-assignment documents are real files (see "File storage" below). Onboarding's CV step and the CV Builder still only record a filename/tag string, not bytes.
 - **LinkedIn sign-in is a UI-only placeholder** (shows an inert notice) — no LinkedIn OAuth app is wired up.
 - **Billing is a UI-only mock.** `User.subscribed` / `billingPlan` / `trialStartedAt` exist and the trial-countdown math is real, but there's no Stripe (or other payment processor) integration — nothing actually charges anyone.
 - **Manager Dashboard's usage/traffic numbers are static illustrative constants**, not real cross-tenant queries — intentional, since building real aggregate analytics across all users wasn't in scope and raises its own access-control questions.
+
+## File storage
+
+Uploaded files (a CV per application, emails attached to a stage, home-assignment brief/submission) live in the `StoredFile` table as `bytea` — no object-storage service. `src/lib/files.ts` owns the rules: 4 MB cap (under the ~4.5 MB serverless body limit), an extension allowlist (pdf, doc/docx, png/jpg/webp/gif, txt, eml, msg — never html/svg), and the stored MIME comes from the extension, not the client. Bytes are only ever served by `GET /api/files/[id]` (owner-checked; PDFs/images/text inline, everything else forced to download, `nosniff`). Upload with `POST /api/files` (multipart), then attach by id: `cvFileId` on `POST/PATCH /api/applications`, `/api/applications/[id]/emails` (file or pasted text, per stage), `/api/applications/[id]/assignment-files`. Those routes return the refreshed application. `deleteOrphanFiles()` removes a file once nothing references it — call it after detaching/deleting. Every application payload is built with `APP_INCLUDE` in `src/lib/serialize.ts`, so file metadata always rides along. On the client, `usePreview()` (`src/components/files/FilePreview.tsx`, mounted in `AppShellClient`) opens the shared viewer.
+
+If you outgrow Postgres bytea (large files, many users), swap `saveUpload`/the `/api/files/[id]` handler for signed-URL object storage; the rest of the app only deals in file ids.
+
+## Glass look & themes
+
+`globals.css` defines translucent `--surface*` tokens over a `--glow` gradient, and one rule gives any element with an inline `background: var(--surface)` (or `--sb-bg`) the frosted `backdrop-filter` — so components stay plain inline-styled. Stage colours (`--st-*`) contain no purple by design. `mixed` overrides the sidebar tokens to stay dark/opaque (the translucent dark tokens go grey over the light glow).
 
 ## Env vars
 
