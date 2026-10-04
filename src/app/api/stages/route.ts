@@ -4,7 +4,7 @@ import { requireUserOr401 } from "@/lib/api-auth";
 
 const CUSTOM_PALETTE = [
   { color: "oklch(0.72 0.14 200)", soft: "oklch(0.72 0.14 200 / 0.15)" },
-  { color: "oklch(0.72 0.15 330)", soft: "oklch(0.72 0.15 330 / 0.15)" },
+  { color: "oklch(0.72 0.13 250)", soft: "oklch(0.72 0.13 250 / 0.15)" },
   { color: "oklch(0.75 0.13 120)", soft: "oklch(0.75 0.13 120 / 0.15)" },
   { color: "oklch(0.7 0.16 40)", soft: "oklch(0.7 0.16 40 / 0.15)" },
 ];

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUserOr401 } from "@/lib/api-auth";
-import { toApiApplication } from "@/lib/serialize";
+import { APP_INCLUDE, toApiApplication } from "@/lib/serialize";
 
 function linkSource(link: string | null) {
   if (!link) return null;
@@ -33,6 +33,7 @@ export async function GET() {
   const apps = await prisma.application.findMany({
     where: { userId: user.id },
     orderBy: { appliedDate: "desc" },
+    include: APP_INCLUDE,
   });
   return NextResponse.json({ applications: apps.map(toApiApplication) });
 }
@@ -52,7 +53,19 @@ export async function POST(request: NextRequest) {
   const desc = String(body?.desc ?? "").trim() || null;
   const referral = !!body?.referral;
   const appliedDate = String(body?.date ?? "").trim() || new Date().toISOString().slice(0, 10);
-  const cvName = body?.cvName ? String(body.cvName) : null;
+  // Matches the design: library picks arrive as "CV <tag>"; a freshly uploaded tailored CV is "CV Tailored".
+  let cvName = body?.cvName ? String(body.cvName) : null;
+  let cvFileName: string | null = null;
+
+  // A CV file (uploaded via /api/files, or picked from the library) must belong to this user.
+  let cvFileId: string | null = null;
+  if (body?.cvFileId) {
+    const file = await prisma.storedFile.findUnique({ where: { id: String(body.cvFileId) }, select: { id: true, userId: true, name: true } });
+    if (!file || file.userId !== user.id) return NextResponse.json({ error: "CV file not found." }, { status: 400 });
+    cvFileId = file.id;
+    cvFileName = file.name;
+    cvName = cvName ?? "CV Tailored";
+  }
 
   const app = await prisma.application.create({
     data: {
@@ -61,6 +74,8 @@ export async function POST(request: NextRequest) {
       role,
       source: referral ? "Referral" : linkSource(link) ?? "Direct",
       cvVersion: cvName,
+      cvFileName,
+      cvFileId,
       link,
       appliedDate,
       stage: "applied",
@@ -68,8 +83,9 @@ export async function POST(request: NextRequest) {
       desc,
       referral,
       jdKeywords: JSON.stringify(deriveKeywords(desc ?? "")),
-      notes: JSON.stringify([{ date: appliedDate.slice(5), text: "Added manually via New Application." }]),
+      notes: JSON.stringify([{ date: appliedDate.slice(5), text: "Added manually via New Application.", stage: "applied" }]),
     },
+    include: APP_INCLUDE,
   });
 
   return NextResponse.json({ application: toApiApplication(app) }, { status: 201 });

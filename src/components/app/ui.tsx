@@ -85,7 +85,9 @@ export function ModalOverlay({ onClose, children, width = 440 }: { onClose: () =
       style={{
         position: "fixed",
         inset: 0,
-        background: "oklch(0 0 0 / 0.5)",
+        background: "oklch(0.12 0.015 230 / 0.55)",
+        backdropFilter: "blur(5px)",
+        WebkitBackdropFilter: "blur(5px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -100,10 +102,13 @@ export function ModalOverlay({ onClose, children, width = 440 }: { onClose: () =
           maxHeight: "86vh",
           overflowY: "auto",
           background: "var(--surface)",
-          border: "1px solid var(--border-soft)",
-          borderRadius: 14,
+          border: "1px solid var(--border)",
+          borderRadius: 16,
           padding: 24,
-          animation: "modalIn 0.18s ease both",
+          backdropFilter: "blur(28px) saturate(150%)",
+          WebkitBackdropFilter: "blur(28px) saturate(150%)",
+          boxShadow: "0 30px 60px oklch(0 0 0 / 0.4)",
+          animation: "modalIn 0.22s ease both",
         }}
       >
         {children}

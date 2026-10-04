@@ -4,16 +4,18 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AiIcon, BackArrowIcon, BriefcaseIcon, ExternalLinkIcon, RejectIcon, TrashIcon } from "@/components/icons";
 import { AgentModal } from "@/components/detail/AgentModal";
+import { AssignmentFiles } from "@/components/detail/AssignmentFiles";
 import { AtsCard } from "@/components/detail/AtsCard";
+import { CvBox } from "@/components/detail/CvBox";
+import { StageLog } from "@/components/detail/StageLog";
 import { Timeline } from "@/components/detail/Timeline";
 import { decorateApp } from "@/lib/app-logic";
 import { useAppData, type InitialAppData } from "@/lib/useAppData";
 
 export function DetailView({ id, initial }: { id: string; initial: InitialAppData }) {
   const router = useRouter();
-  const { apps, stages, loading, error, patchApp, deleteApp } = useAppData(initial);
-  const [noteText, setNoteText] = useState("");
-  const [savingNote, setSavingNote] = useState(false);
+  const { apps, stages, loading, error, patchApp, deleteApp, pickAndAttachCv, attachEmailFile, attachEmailText, removeEmail, addAssignmentFile, removeAssignmentFile } = useAppData(initial);
+  const [logKey, setLogKey] = useState("all");
   const [agentOpen, setAgentOpen] = useState(false);
 
   const stageMap = useMemo(() => new Map((stages ?? []).map((s) => [s.key, s])), [stages]);
@@ -35,17 +37,6 @@ export function DetailView({ id, initial }: { id: string; initial: InitialAppDat
         </div>
       </div>
     );
-  }
-
-  async function addNote() {
-    if (!noteText.trim()) return;
-    setSavingNote(true);
-    try {
-      await patchApp(app!.id, { appendNote: { text: noteText.trim() } });
-      setNoteText("");
-    } finally {
-      setSavingNote(false);
-    }
   }
 
   async function onDelete() {
@@ -76,11 +67,11 @@ export function DetailView({ id, initial }: { id: string; initial: InitialAppDat
         </div>
       </div>
 
-      <Timeline stage={app.stage} stages={stages} />
+      <Timeline stage={app.stage} stages={stages} onSelect={setLogKey} />
 
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 18 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
-          {app.hasAssignment && (
+          {(app.stage === "assignment" || app.hasAssignment) && (
             <div style={{ background: "var(--amber-soft)", border: "1px solid oklch(0.78 0.15 75 / 0.35)", borderRadius: 12, padding: "16px 18px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <BriefcaseIcon size={15} />
@@ -89,8 +80,9 @@ export function DetailView({ id, initial }: { id: string; initial: InitialAppDat
                   <div style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--amber)", background: "oklch(0.78 0.15 75 / 0.2)", padding: "3px 8px", borderRadius: 6 }}>due {app.assignmentDue}</div>
                 )}
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{app.assignmentTitle}</div>
-              <div style={{ fontSize: 12.5, color: "var(--text-dim)", lineHeight: 1.5 }}>{app.assignmentDesc}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{app.assignmentTitle ?? "Home assignment"}</div>
+              <div style={{ fontSize: 12.5, color: "var(--text-dim)", lineHeight: 1.5, marginBottom: 12 }}>{app.assignmentDesc ?? "Keep the brief they sent and your submission together here."}</div>
+              <AssignmentFiles app={app} addAssignmentFile={addAssignmentFile} removeAssignmentFile={removeAssignmentFile} />
             </div>
           )}
 
@@ -101,33 +93,7 @@ export function DetailView({ id, initial }: { id: string; initial: InitialAppDat
             </div>
           )}
 
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: "16px 18px" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Notes</div>
-            {app.notes.length === 0 && <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 10 }}>No notes yet.</div>}
-            {app.notes.map((note, i) => (
-              <div key={i} style={{ display: "flex", gap: 10, padding: "9px 0", borderBottom: "1px solid var(--border-soft)" }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--text-faint)", flex: "none", width: 60 }}>{note.date}</div>
-                <div style={{ fontSize: 12.5, color: "var(--text-dim)", lineHeight: 1.5 }}>{note.text}</div>
-              </div>
-            ))}
-            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <input
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addNote();
-                }}
-                placeholder="Add a note…"
-                style={{ flex: 1, background: "var(--surface2)", border: "1px solid var(--border)", borderRadius: 8, padding: "9px 12px", color: "var(--text)", fontFamily: "var(--font-ui)", fontSize: 12, outline: "none" }}
-              />
-              <div
-                onClick={addNote}
-                style={{ display: "flex", alignItems: "center", padding: "0 14px", borderRadius: 8, background: "var(--accent)", color: "var(--on-accent)", fontSize: 12, fontWeight: 700, cursor: savingNote ? "default" : "pointer", opacity: savingNote ? 0.6 : 1 }}
-              >
-                Add
-              </div>
-            </div>
-          </div>
+          <StageLog app={app} stages={stages} logKey={logKey} onLogKey={setLogKey} patchApp={patchApp} attachEmailFile={attachEmailFile} attachEmailText={attachEmailText} removeEmail={removeEmail} />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
@@ -149,7 +115,7 @@ export function DetailView({ id, initial }: { id: string; initial: InitialAppDat
                 </select>
               </div>
               <Row label="CV Version" value={app.cvVersionLabel} mono />
-              {app.cvFileName && <Row label="CV File" value={app.cvFileName} mono small />}
+              <CvBox app={app} onReplace={() => pickAndAttachCv(app.id)} />
               <Row label="Source" value={app.source} />
               <Row label="Applied" value={app.appliedDateFull} mono />
               <Row label="Referral" value={app.referralLabel} bold />

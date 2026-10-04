@@ -16,29 +16,29 @@ enum Role {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  username       String
-  passwordHash   String?
-  role           Role      @default(user)
-  googleSub      String?   @unique
-  linkedinId     String?   @unique
-  picture        String?
-  createdAt      DateTime  @default(now())
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String
+  passwordHash String?
+  role         Role     @default(user)
+  googleSub    String?  @unique
+  linkedinId   String?  @unique
+  picture      String?
+  createdAt    DateTime @default(now())
 
-  fields         String    @default("[]") // JSON string[] — job-search focus areas
+  fields         String  @default("[]") // JSON string[] — job-search focus areas
   experience     String? // experience bracket key
   title          String?
   location       String?
-  linkedinSynced Boolean   @default(true)
-  mailSynced     Boolean   @default(true)
+  linkedinSynced Boolean @default(true)
+  mailSynced     Boolean @default(true)
 
-  goalApps       Int       @default(5)
-  goalMocks      Int       @default(2)
-  goalDate       String?
+  goalApps  Int     @default(5)
+  goalMocks Int     @default(2)
+  goalDate  String?
 
-  trialStartedAt DateTime  @default(now())
-  subscribed     Boolean   @default(false)
+  trialStartedAt DateTime @default(now())
+  subscribed     Boolean  @default(false)
   billingPlan    String? // "card" | "paypal" | "applepay" | "googlepay"
 
   sessions       Session[]
@@ -47,6 +47,7 @@ model User {
   profileLinks   ProfileLink[]
   stages         PipelineStage[]
   cvLibraryItems CvLibraryItem[]
+  files          StoredFile[]
 }
 
 model Session {
@@ -72,35 +73,91 @@ model PasswordResetToken {
 }
 
 model Application {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  company         String
-  role            String
-  source          String   @default("Direct")
-  cvVersion       String?
-  cvFileName      String?
-  link            String?
-  appliedDate     String
-  stage           String   @default("applied")
-  nextStep        String   @default("Awaiting response")
-  desc            String?
-  referral        Boolean  @default(false)
-  rejected        Boolean  @default(false)
-  rejectedAt      String?
+  company     String
+  role        String
+  source      String      @default("Direct")
+  cvVersion   String?
+  cvFileName  String?
+  cvFileId    String? // the actual CV file sent with this application
+  cvFile      StoredFile? @relation("ApplicationCv", fields: [cvFileId], references: [id], onDelete: SetNull)
+  link        String?
+  appliedDate String
+  stage       String      @default("applied")
+  nextStep    String      @default("Awaiting response")
+  desc        String?
+  referral    Boolean     @default(false)
+  rejected    Boolean     @default(false)
+  rejectedAt  String?
 
   assignmentTitle String?
   assignmentDesc  String?
   assignmentDue   String?
 
-  jdKeywords      String   @default("[]") // JSON string[]
-  notes           String   @default("[]") // JSON {date, text}[]
+  jdKeywords String @default("[]") // JSON string[]
+  notes      String @default("[]") // JSON {date, text, stage?}[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  emails          StageEmail[]
+  assignmentFiles AssignmentFile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+/// Uploaded file bytes (CVs, emails, assignment briefs/submissions). Stored in Postgres so no
+/// separate object-storage service is needed; uploads are capped well below the serverless
+/// request-body limit (see src/lib/files.ts). Served only to the owning user via /api/files/[id].
+model StoredFile {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  mime      String
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  emails          StageEmail[]
+  assignmentFiles AssignmentFile[]
+  cvApplications  Application[]    @relation("ApplicationCv")
+  libraryItems    CvLibraryItem[]  @relation("LibraryCv")
+
+  @@index([userId])
+}
+
+/// An email attached to (or pasted into) one stage of an application's history.
+model StageEmail {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  stageKey      String
+  fileId        String?
+  file          StoredFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  name          String // display name (file name, or the subject for pasted text)
+  subject       String?
+  sender        String?
+  body          String? // pasted email text, when no file was attached
+  createdAt     DateTime    @default(now())
+
+  @@index([applicationId])
+}
+
+/// Home Assignment files: the brief you were given, and your submission.
+model AssignmentFile {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  slot          String // "brief" | "submission"
+  fileId        String
+  file          StoredFile  @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@index([applicationId])
 }
 
 model ProfileLink {
@@ -125,17 +182,19 @@ model PipelineStage {
   position Int
   custom   Boolean @default(false)
 
-  @@index([userId])
   @@unique([userId, key])
+  @@index([userId])
 }
 
 model CvLibraryItem {
-  id     String @id @default(cuid())
+  id     String      @id @default(cuid())
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   name   String
   date   String
   tag    String
+  fileId String? // set when the CV was uploaded as a real file
+  file   StoredFile? @relation("LibraryCv", fields: [fileId], references: [id], onDelete: SetNull)
 
   @@index([userId])
 }

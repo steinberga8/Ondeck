@@ -11,7 +11,7 @@ import { computeStatCards, decorateApp } from "@/lib/app-logic";
 import { useAppData, type InitialAppData } from "@/lib/useAppData";
 
 export function KanbanView({ initial }: { initial: InitialAppData }) {
-  const { apps, stages, loading, error, createApp, patchApp, deleteApp, createStage } = useAppData(initial);
+  const { apps, stages, loading, error, createApp, patchApp, deleteApp, createStage, pickAndAttachCv } = useAppData(initial);
   const [search, setSearch] = useState("");
   const [newAppOpen, setNewAppOpen] = useState(false);
   const [stageModalOpen, setStageModalOpen] = useState(false);
@@ -153,6 +153,7 @@ export function KanbanView({ initial }: { initial: InitialAppData }) {
                     onDelete={() => {
                       if (confirm(`Delete the application to ${app.company}? This can't be undone.`)) deleteApp(app.id);
                     }}
+                    onAttachCv={() => pickAndAttachCv(app.id)}
                   />
                 ))}
               </div>
